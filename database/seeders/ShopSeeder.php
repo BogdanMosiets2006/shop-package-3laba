@@ -1,6 +1,6 @@
 <?php
 
-namespace Vendor\ShopPackage\Database\Seeders;
+namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Vendor\ShopPackage\Models\Category;
@@ -14,48 +14,31 @@ class ShopSeeder extends Seeder
 {
     public function run(): void
     {
-        // Создаём корневые категории
         $categories = Category::factory(5)->create();
-
-        // Подкатегории
-        $categories->each(function (Category $parent) {
-            Category::factory(3)->withParent($parent->id)->create();
-        });
-
         $suppliers  = Supplier::factory(10)->create();
         $warehouses = Warehouse::factory(5)->create();
-        $clients    = Client::factory(30)->create();
+        $clients    = Client::factory(20)->create();
 
-        // Товары привязываем к существующим категориям и поставщикам
-        $allCategories = Category::all();
-        $allSuppliers  = Supplier::all();
-
-        $products = Product::factory(50)->create([
-            'category_id' => fn() => $allCategories->random()->id,
-            'supplier_id' => fn() => $allSuppliers->random()->id,
+        $products = Product::factory(30)->create([
+            'category_id' => fn() => $categories->random()->id,
+            'supplier_id' => fn() => $suppliers->random()->id,
         ]);
 
-        // Связываем товары со складами
-        $products->each(function (Product $product) use ($warehouses) {
-            $subset = $warehouses->random(rand(1, 3));
+        $products->each(function ($product) use ($warehouses) {
             $product->warehouses()->attach(
-                $subset->mapWithKeys(fn($w) => [$w->id => ['quantity' => rand(0, 200)]])->toArray()
+                $warehouses->random(rand(1, 3))
+                    ->mapWithKeys(fn($w) => [$w->id => ['quantity' => rand(10, 100)]])
+                    ->toArray()
             );
         });
 
-        // Создаём заказы
-        $clients->each(function (Client $client) use ($products) {
-            $orders = Order::factory(rand(1, 4))->create(['client_id' => $client->id]);
-
-            $orders->each(function (Order $order) use ($products) {
-                $subset = $products->random(rand(1, 5));
+        $clients->each(function ($client) use ($products) {
+            $orders = Order::factory(rand(1, 3))->create(['client_id' => $client->id]);
+            $orders->each(function ($order) use ($products) {
                 $order->products()->attach(
-                    $subset->mapWithKeys(fn($p) => [
-                        $p->id => [
-                            'quantity' => rand(1, 10),
-                            'price'    => $p->price,
-                        ],
-                    ])->toArray()
+                    $products->random(rand(1, 4))
+                        ->mapWithKeys(fn($p) => [$p->id => ['quantity' => rand(1, 5), 'price' => $p->price]])
+                        ->toArray()
                 );
                 $order->recalculateTotal();
             });

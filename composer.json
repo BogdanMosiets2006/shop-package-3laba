@@ -25,11 +25,13 @@
             "Vendor\\ShopPackage\\": "src/"
         }
     },
-    "autoload-dev": {
-        "psr-4": {
-            "Vendor\\ShopPackage\\Tests\\": "tests/"
-        }
-    },
+    "autoload": {
+    "psr-4": {
+        "Vendor\\ShopPackage\\": "src/",
+        "Vendor\\ShopPackage\\Database\\Factories\\": "database/factories/",
+        "Vendor\\ShopPackage\\Database\\Seeders\\": "database/seeders/"
+    }
+},
     "extra": {
         "laravel": {
             "providers": [
